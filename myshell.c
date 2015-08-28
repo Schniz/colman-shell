@@ -24,7 +24,7 @@ typedef struct Process {
 char* trimString(char* str, size_t size, int* length);
 char** getCommandArgs(char* trimmedCmd);
 void readCommand(char*** args);
-void handleCommand(char* command, char** args, bool* shouldContinue);
+void handleCommand(char* command, char** args, char* stdinFile, char* stdoutFile, bool* shouldContinue);
 void printJobs();
 
 int processes = 0;
@@ -41,6 +41,8 @@ int main(int cargs, char* argv[]) {
   bool shouldContinue = TRUE;
   char* shellName = argv[1];
   char** args = NULL;
+  char* stdinFilename = NULL;
+  char* stdoutFilename = NULL;
   char* command = NULL;
   int i;
 
@@ -55,6 +57,8 @@ int main(int cargs, char* argv[]) {
     handleCommand(
       command,
       args,
+      stdinFilename,
+      stdoutFilename,
       &shouldContinue
     );
   } while (shouldContinue);
@@ -82,12 +86,14 @@ void printJobs() {
     printf("----------\n");
 }
 
-void handleCommand(char* command, char** args, bool* shouldContinue) {
+void handleCommand(char* command, char** args, char* stdinFile, char* stdoutFile, bool* shouldContinue) {
   Process* oldProcess;
   Process* proc;
   int status;
   pid_t pid;
   int executed;
+  FILE* stdinResource;
+  FILE* stdoutResource;
 
   if (command == NULL) {
     return;
@@ -101,6 +107,16 @@ void handleCommand(char* command, char** args, bool* shouldContinue) {
     pid = fork();
     printf("pid = %i\n", pid);
     if (pid == 0) { // child process
+      if (stdinFile != NULL) {
+        stdinResource = fopen(stdinFile, "w");
+        dup2(fileno(stdinResource), STDIN_FILENO);
+        fclose(stdinResource);
+      }
+      if (stdoutFile != NULL) {
+        stdoutResource = fopen(stdoutFile, "w");
+        dup2(fileno(stdoutResource), STDOUT_FILENO);
+        fclose(stdoutResource);
+      }
       executed = execvp(args[0], args);
       if (executed < 0) {
         printf("error on execute: %i\n", executed);
