@@ -25,6 +25,7 @@ char* trimString(char* str, size_t size, int* length);
 char** getCommandArgs(char* trimmedCmd);
 void readCommand(char*** args);
 void handleCommand(char* command, char** args, bool* shouldContinue);
+void printJobs();
 
 int processes = 0;
 Process* firstProcess = NULL;
@@ -56,19 +57,30 @@ int main(int cargs, char* argv[]) {
       args,
       &shouldContinue
     );
-    Process* proc = firstProcess;
-    printf("processes: ");
-    i = 0;
-    while (proc != NULL) {
-      printf("%i ", (int)proc->pid);
-      proc = proc->next;
-      i++;
-    }
-    printf("\n%i\n", i);
   } while (shouldContinue);
 
   return 0;
 };
+
+void printJobs() {
+    Process* proc = firstProcess;
+    if (proc == NULL) {
+      printf("no processes. why don't you try to execute something?\n");
+      return;
+    }
+
+    printf("processes:\n");
+    printf("----------\n");
+    int i = 0;
+    while (proc != NULL) {
+      printf("%i: %i\n", i+1, (int)proc->pid);
+      proc = proc->next;
+      i++;
+    }
+    printf("----------\n");
+    printf("%i processes.\n", i);
+    printf("----------\n");
+}
 
 void handleCommand(char* command, char** args, bool* shouldContinue) {
   Process* oldProcess;
@@ -81,6 +93,8 @@ void handleCommand(char* command, char** args, bool* shouldContinue) {
     return;
   } else if (0 == strcmp(command, "quit")) {
     *shouldContinue = FALSE;
+  } else if (0 == strcmp(command, "jobs")) {
+    printJobs();
   } else if (0 < strlen(command)) {
     printf("launching command...\n");
 
@@ -106,6 +120,7 @@ void handleCommand(char* command, char** args, bool* shouldContinue) {
       exit(1);
     }
 
+    printJobs();
     printf("status: %i\n", status);
   }
 }
